@@ -1,0 +1,1 @@
+export CLUSTERSUBMISSIONPATH=$(pwd -L)
