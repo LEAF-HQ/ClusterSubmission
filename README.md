@@ -5,3 +5,8 @@ Suppoted clusted:
  - htcondor_lxplus
  - htcondor_ulb
  - slurm_psi
+
+> Note: rememeber to do:
+```sh 
+source `setup.sh`
+```
