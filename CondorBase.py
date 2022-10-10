@@ -1,10 +1,18 @@
-import os, json
-import htcondor
+import os, json, htcondor
 from printing_utils import red, blue, prettydict
-from utils import ensureDirectory
-
+from Utils import ensureDirectory
 from ClusterSpecificSettings import ClusterSpecificSettings
 from UserSpecificSettings import UserSpecificSettings
+
+
+def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', debug=False):
+    print(blue('  --> Submitting to htcondor...'))
+    CB = CondorBase(JobName='FlattenTree', Time=Time)
+    CB.CreateJobInfo(executable=executable)
+    CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
+    if not debug:
+        CB.SubmitManyJobs(job_args=job_args)
+
 
 class CondorBase():
     def __init__(self, JobName = 'test', Memory = 2, Disk = 1, Time = '00:00:00'):
