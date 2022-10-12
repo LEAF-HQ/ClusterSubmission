@@ -3,7 +3,6 @@ def ensureDirectory(dirname, use_se=False):
     import os, subprocess
     from printing_utils import yellow
     if use_se:
-        # print dirname
         command = 'LD_LIBRARY_PATH=\'\' PYTHONPATH=\'\' gfal-mkdir -p %s' % (dirname)
         DEVNULL = open(os.devnull, 'wb')
         p = subprocess.Popen(command, stdout=DEVNULL, stderr=DEVNULL, shell=True)
@@ -13,4 +12,4 @@ def ensureDirectory(dirname, use_se=False):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         if not os.path.exists(dirname):
-            print yellow('--> failed to make directory "%s"'%(dirname))
+            print(yellow('--> failed to make directory "%s"'%(dirname)))

@@ -5,12 +5,20 @@ from ClusterSpecificSettings import ClusterSpecificSettings
 from UserSpecificSettings import UserSpecificSettings
 
 
-def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', debug=False):
+def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', extraInfo=None, deleteInfo=None, debug=False):
     print(blue('  --> Submitting to htcondor...'))
-    CB = CondorBase(JobName='FlattenTree', Time=Time)
+    CB = CondorBase(JobName='_'.join(str(executable).split('.')[0:-1]), Time=Time)
     CB.CreateJobInfo(executable=executable)
     CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
-    if not debug:
+    if extraInfo:
+        for name, info in extraInfo.items():
+            CB.ModifyJobInfo(name, info)
+    if deleteInfo:
+        for name in deleteInfo:
+            CB.DeleteJobInfo('name')
+    if debug:
+        CB.StoreJobInfo()
+    else:
         CB.SubmitManyJobs(job_args=job_args)
 
 
@@ -34,23 +42,23 @@ class CondorBase():
         if not hasattr(self, 'JobInfo'): self.JobInfo = {}
         outputname = str(self.JobName)+'_$(ClusterId)_$(ProcId)'
         self.JobInfo = {
-            'universe':             'vanilla',
-            'executable':           executable,                    # the program to run on the execute node
-            'arguments':            arguments,                     # sleep for 10 seconds
-            'JobBatchName':         str(self.JobName),             # name of the submitted job
-            'outdir':               './joboutput/',                # directory to store log/out/err files from htcondor
-            'output':               '$(outdir)'+outputname+'.out', # storage of stdout
-            'error':                '$(outdir)'+outputname+'.err', # storage of stderr
-            'log':                  '$(outdir)'+outputname+'.log', # storage of job log info
-            'stream_output':        'True',                        # should transfer output file during the run.
-            'stream_error':         'True',                        # should transfer error file during the run.
-            'RequestCpus':          '1',                           # requested number of CPUs (cores)
-            'RequestMemory':        self.Memory,                   # memory in GB
-            'RequestDisk':          self.Disk,                     # disk space in GB
-            'notify_user':          self.email,                    # send an email to the user if the notification condition is set
-            'notification':         'Always',                      # Always/Error/Done
-            'getenv':               'True',                        # port the local environment to the cluster
-            'WhenToTransferOutput': 'ON_EXIT_OR_EVICT',            # specify when to transfer the outout back. Not tested yet
+            'universe':                'vanilla',
+            'executable':              executable,                    # the program to run on the execute node
+            'arguments':               arguments,                     # sleep for 10 seconds
+            'JobBatchName':            str(self.JobName),             # name of the submitted job
+            'outdir':                  './joboutput/',                # directory to store log/out/err files from htcondor
+            'output':                  '$(outdir)'+outputname+'.out', # storage of stdout
+            'error':                   '$(outdir)'+outputname+'.err', # storage of stderr
+            'log':                     '$(outdir)'+outputname+'.log', # storage of job log info
+            'stream_output':           'True',                        # should transfer output file during the run.
+            'stream_error':            'True',                        # should transfer error file during the run.
+            'request_CPUs':            '1',                           # requested number of CPUs (cores)
+            'request_memory':          self.Memory,                   # memory in GB
+            'request_disk':            self.Disk,                     # disk space in GB
+            'notify_user':             self.email,                    # send an email to the user if the notification condition is set
+            'notification':            'Always',                      # Always/Error/Done
+            'getenv':                  'True',                        # port the local environment to the cluster
+            'when_to_transfer_output': 'ON_EXIT_OR_EVICT',            # specify when to transfer the outout back. Not tested yet
             # 'Hold':                 'True',                        # Start the job with Hold status
             # 'transfer_executable':  'False',                       # Default True: copy the executable to the cluster. Set to False search the executable on the remote machine
             # 'requirements':          'OpSysAndVer == "CentOS7"'',   # additional requirements. Not tested yet
@@ -62,6 +70,10 @@ class CondorBase():
     def ModifyJobInfo(self,name,info):
         if not hasattr(self, 'JobInfo'): self.CreateJobInfo()
         self.JobInfo[name] = info
+
+    def DeleteJobInfo(self,name):
+        if not hasattr(self, 'JobInfo'): self.CreateJobInfo()
+        del self.JobInfo[name]
 
     def SubmitJob(self):
         if self.JobInfo['executable'] == '':

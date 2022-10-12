@@ -105,13 +105,17 @@ class ClusterSpecificSettings():
         # self.Settings[timedictName]['long'] = TimeFormat('08:00:00')
 
     def setJobTimeUpperLimit(self, ref_time = '01:00:00'):
+        cluster_time_name = self.Settings['MaxRunTime'][0]
+        timedict = self.Settings[cluster_time_name]
+        if ref_time in timedict:
+            self.Settings['MaxRunTime'] = (cluster_time_name, ref_time if 'JobFlavour' in cluster_time_name else str(timedict[ref_time]) )
+            return
         ref_time_ = TimeFormat(ref_time)
         if not 'MaxRunTime' in self.Settings:
             self.Settings['MaxRunTime'] = (None, None)
             return
-        timedict = self.Settings[self.Settings['MaxRunTime'][0]]
         for time_ in timedict:
             if ref_time_ < timedict[time_]:
-                self.Settings['MaxRunTime'] = (self.Settings['MaxRunTime'][0], time_)
+                self.Settings['MaxRunTime'] = (self.Settings['MaxRunTime'][0], str(time_))
                 return
         raise ValueError(red('Runtime exceeds 7 days, please choose something a bit faster.'))
