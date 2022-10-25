@@ -36,7 +36,10 @@ class CondorBase():
         self.CreateShedd()
 
     def CreateShedd(self):
-        self.schedd = htcondor.Schedd(htcondor.Collector().locate(htcondor.DaemonTypes.Schedd))
+        col = htcondor.Collector()
+        credd = htcondor.Credd()
+        credd.add_user_cred(htcondor.CredTypes.Kerberos, None)
+        self.schedd = htcondor.Schedd(col.locate(htcondor.DaemonTypes.Schedd))
 
     def CreateJobInfo(self, executable='', arguments=''):
         if not hasattr(self, 'JobInfo'): self.JobInfo = {}
