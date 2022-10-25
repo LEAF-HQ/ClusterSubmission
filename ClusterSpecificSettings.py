@@ -108,7 +108,7 @@ class ClusterSpecificSettings():
         cluster_time_name = self.Settings['MaxRunTime'][0]
         timedict = self.Settings[cluster_time_name]
         if ref_time in timedict:
-            self.Settings['MaxRunTime'] = (cluster_time_name, ref_time if 'JobFlavour' in cluster_time_name else str(timedict[ref_time]) )
+            self.Settings['MaxRunTime'] = (cluster_time_name, '"'+ref_time+'"' if '+JobFlavour' in cluster_time_name else str(timedict[ref_time]) )
             return
         ref_time_ = TimeFormat(ref_time)
         if not 'MaxRunTime' in self.Settings:
