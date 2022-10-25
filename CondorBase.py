@@ -17,6 +17,7 @@ def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', extra
         for name in deleteInfo:
             CB.DeleteJobInfo(name)
     if debug:
+        CB.ModifyJobInfo('ExtraInfo', [ {'arguments': arg } for arg in job_args])
         CB.StoreJobInfo()
     else:
         CB.SubmitManyJobs(job_args=job_args)
