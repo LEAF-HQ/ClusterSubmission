@@ -6,7 +6,7 @@ from UserSpecificSettings import UserSpecificSettings
 
 
 def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', extraInfo=None, deleteInfo=None, debug=False):
-    print(blue('  --> Submitting to htcondor...'))
+    print(blue('  --> Submitting to htcondor '+str(len(job_args))+' jobs ...'))
     CB = CondorBase(JobName='_'.join(str(executable).split('.')[0:-1]), Time=Time)
     CB.CreateJobInfo(executable=executable)
     CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
@@ -27,11 +27,8 @@ class CondorBase():
     def __init__(self, JobName = 'test', Memory = 2, Disk = 1, Time = '00:00:00'):
         self.JobName = JobName
         user_settings = UserSpecificSettings(os.getenv('USER'))
-        user_settings.LoadJSON()
         self.email = user_settings.Get('email')
-        cluster_settings = ClusterSpecificSettings(user_settings.Get('cluster'))
-        cluster_settings.setJobTimeUpperLimit(ref_time = Time)
-        self.RequestTimeSettingName, self.Time = cluster_settings.getSettings()['MaxRunTime']
+        self.RequestTimeSettingName, self.Time = ClusterSpecificSettings(user_settings.Get('cluster')).getTimeInfo(ref_time = Time)
         self.Memory = str(int(Memory)*1024)
         self.Disk   = str(int(Disk)*1024*1024)
         self.CreateShedd()

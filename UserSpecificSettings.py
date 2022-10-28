@@ -9,6 +9,7 @@ class UserSpecificSettings():
             'email':    email,
             'cluster':  cluster,
             }
+        self.LoadJSON()
 
     def GetJSONPath(self,username):
         return os.getenv('CLUSTERSUBMISSIONPATH')+'/Settings_'+username+'.json'

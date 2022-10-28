@@ -116,6 +116,10 @@ class ClusterSpecificSettings():
             return
         for time_ in timedict:
             if ref_time_ < timedict[time_]:
-                self.Settings['MaxRunTime'] = (self.Settings['MaxRunTime'][0], str(time_))
+                self.Settings['MaxRunTime'] = (self.Settings['MaxRunTime'][0], str('"'+time_+'"' if '+JobFlavour' in cluster_time_name else time_))
                 return
         raise ValueError(red('Runtime exceeds 7 days, please choose something a bit faster.'))
+
+    def getTimeInfo(self, ref_time = '01:00:00'):
+        self.setJobTimeUpperLimit(ref_time = ref_time)
+        return self.getSettings()['MaxRunTime']
