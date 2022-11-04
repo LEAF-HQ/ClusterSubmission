@@ -5,22 +5,45 @@ from ClusterSpecificSettings import ClusterSpecificSettings
 from UserSpecificSettings import UserSpecificSettings
 
 
-def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', extraInfo=None, deleteInfo=None, debug=False):
+def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', JsonInfo={}, deleteInfo=[], jsonName='', debug=False):
     print(blue('  --> Submitting to htcondor '+str(len(job_args))+' jobs ...'))
     CB = CondorBase(JobName='_'.join(str(executable).split('.')[0:-1]), Time=Time)
     CB.CreateJobInfo(executable=executable)
     CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
-    if extraInfo:
-        for name, info in extraInfo.items():
-            CB.ModifyJobInfo(name, info)
-    if deleteInfo:
-        for name in deleteInfo:
-            CB.DeleteJobInfo(name)
+    for name, info in JsonInfo.items():
+        CB.ModifyJobInfo(name, info)
+    for name in deleteInfo:
+        CB.DeleteJobInfo(name)
     if debug:
         CB.ModifyJobInfo('ExtraInfo', [ {'arguments': arg } for arg in job_args])
-        CB.StoreJobInfo()
+        CB.StoreJobInfo(extraName=jsonName)
+        ClusterId = -1
     else:
-        CB.SubmitManyJobs(job_args=job_args)
+        ClusterId = CB.SubmitManyJobs(job_args=job_args, jsonName=jsonName)
+    return ClusterId
+
+
+def ResubmitFromJson(jsonName, to_remove=[], deleteInfo=[], debug=False):
+    print(blue('  --> Resubmitting from '+jsonName))
+    CB = CondorBase()
+    CB.LoadJobInfo(jsonName+'.json')
+    storeInfo = {}
+    for name in deleteInfo+['ExtraInfo','ClusterId']:
+        storeInfo[name] = CB.JobInfo[name]
+        CB.DeleteJobInfo(name)
+    for args in storeInfo['ExtraInfo'].copy():
+        if any([x in args['arguments'] for x in to_remove]):
+            storeInfo['ExtraInfo'].remove(args)
+    job_args = [list(x.values())[0] for x in storeInfo['ExtraInfo']]
+    print(blue('  --> Submitting to htcondor '+str(len(job_args))+' jobs ...'))
+    if len(job_args)==0: return
+    jsonName = jsonName.split('/')[-1].replace('JobInfo_','')+'_resubmit'
+    if debug:
+        CB.ModifyJobInfo('ExtraInfo', storeInfo['ExtraInfo'])
+        CB.StoreJobInfo(extraName=jsonName)
+    else:
+        ClusterId = CB.SubmitManyJobs(job_args=job_args, jsonName=jsonName)
+        return ClusterId
 
 
 class CondorBase():
@@ -76,7 +99,7 @@ class CondorBase():
         if not hasattr(self, 'JobInfo'): self.CreateJobInfo()
         del self.JobInfo[name]
 
-    def SubmitJob(self):
+    def SubmitJob(self, extraName=''):
         if self.JobInfo['executable'] == '':
             raise ValueError('No executable passed. Please check')
         ensureDirectory(self.JobInfo['outdir'])
@@ -85,9 +108,9 @@ class CondorBase():
         ProcId = str(submit_result.first_proc())
         self.ModifyJobInfo('ClusterId', ClusterId)
         self.ModifyJobInfo('ProcId', ProcId)
-        self.StoreJobInfo(extrainfo='_'+str(ClusterId)+'_'+str(ProcId))
+        self.StoreJobInfo(extraName=extraName+'_'+str(ClusterId)+'_'+str(ProcId))
 
-    def SubmitManyJobs(self, job_args = [], job_exes = []):
+    def SubmitManyJobs(self, job_args = [], job_exes = [], jsonName=''):
         ensureDirectory(self.JobInfo['outdir'])
         sub = htcondor.Submit(self.JobInfo)
         if len(job_exes) == 0:
@@ -100,21 +123,25 @@ class CondorBase():
             jobs = [ {'arguments': job_args[n], 'executable': job_exes[n]} for n in range(len(job_exes))]
         else:
             raise ValueError(red('Something is wrong in the SubmitManyJobs parameters'))
+        ClusterId = -1
         with self.schedd.transaction() as txn:
             submit_result = sub.queue_with_itemdata(txn,1,iter(jobs))
-            self.ModifyJobInfo('ClusterId',str(submit_result.cluster()))
+            ClusterId = submit_result.cluster()
+            self.ModifyJobInfo('ClusterId',str(ClusterId))
             self.ModifyJobInfo('ExtraInfo', jobs)
-            self.StoreJobInfo()
+            self.StoreJobInfo(extraName=jsonName)
+        return ClusterId
 
     def CheckStatus(self):
         for job in self.schedd.xquery(constraint = 'ClusterId == {}'.format(self.JobInfo['ClusterId']), ):
             print(repr(job))
 
-    def StoreJobInfo(self, extrainfo=''):
-        with open(self.JobInfo['outdir']+'JobInfo'+extrainfo+'.json', 'w') as f:
+    def StoreJobInfo(self, extraName=''):
+        if extraName!='': extraName = '_'+extraName
+        with open(self.JobInfo['outdir']+'JobInfo'+extraName+'.json', 'w') as f:
             json.dump(self.JobInfo, f, sort_keys=True, indent=4)
 
-    def LoadJobInfo(self):
+    def LoadJobInfo(self, filename):
         with open(filename, 'r') as f:
             self.JobInfo = json.load(f)
 
