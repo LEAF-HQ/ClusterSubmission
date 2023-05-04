@@ -49,17 +49,18 @@ def ResubmitFromJson(jsonName, to_remove=[], deleteInfo=[], debug=False):
 class CondorBase():
     def __init__(self, JobName = 'test', Memory = 2, Disk = 1, Time = '00:00:00'):
         self.JobName = JobName
-        user_settings = UserSpecificSettings(os.getenv('USER'))
-        self.email = user_settings.Get('email')
-        self.RequestTimeSettingName, self.Time = ClusterSpecificSettings(user_settings.Get('cluster')).getTimeInfo(ref_time = Time)
+        self.user_settings = UserSpecificSettings(os.getenv('USER'))
+        self.email = self.user_settings.Get('email')
+        self.RequestTimeSettingName, self.Time = ClusterSpecificSettings(self.user_settings.Get('cluster')).getTimeInfo(ref_time = Time)
         self.Memory = str(int(Memory)*1024)
         self.Disk   = str(int(Disk)*1024*1024)
         self.CreateShedd()
 
     def CreateShedd(self):
         col = htcondor.Collector()
-        credd = htcondor.Credd()
-        credd.add_user_cred(htcondor.CredTypes.Kerberos, None)
+        if self.user_settings.Get('cluster')=='htcondor_lxplus':
+            credd = htcondor.Credd()
+            credd.add_user_cred(htcondor.CredTypes.Kerberos, None)
         self.schedd = htcondor.Schedd(col.locate(htcondor.DaemonTypes.Schedd))
 
     def CreateJobInfo(self, executable='', arguments=''):
@@ -116,11 +117,11 @@ class CondorBase():
         if len(job_exes) == 0:
             if self.JobInfo['executable'] == '':
                 raise ValueError('No executable passed. Please check')
-            jobs = [ {'arguments': arg } for arg in job_args]
+            jobs = [ {'arguments': str(arg) } for arg in job_args]
         elif len(job_args) == 0:
-            jobs = [ {'arguments': '', 'executable': job_exes[n]} for n in range(len(job_exes))]
+            jobs = [ {'arguments': '', 'executable': str(job_exes[n])} for n in range(len(job_exes))]
         elif len(job_exes) == len(job_args):
-            jobs = [ {'arguments': job_args[n], 'executable': job_exes[n]} for n in range(len(job_exes))]
+            jobs = [ {'arguments': str(job_args[n]), 'executable': str(job_exes[n])} for n in range(len(job_exes))]
         else:
             raise ValueError(red('Something is wrong in the SubmitManyJobs parameters'))
         ClusterId = -1

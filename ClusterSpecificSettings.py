@@ -105,6 +105,9 @@ class ClusterSpecificSettings():
         # self.Settings[timedictName]['long'] = TimeFormat('08:00:00')
 
     def setJobTimeUpperLimit(self, ref_time = '01:00:00'):
+        if not 'MaxRunTime' in self.Settings:
+            self.Settings['MaxRunTime'] = (None, None)
+            return
         cluster_time_name = self.Settings['MaxRunTime'][0]
         timedict = self.Settings[cluster_time_name]
         if ref_time in timedict:
