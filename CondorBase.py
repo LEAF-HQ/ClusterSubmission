@@ -5,9 +5,9 @@ from ClusterSpecificSettings import ClusterSpecificSettings
 from UserSpecificSettings import UserSpecificSettings
 
 
-def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', JsonInfo={}, deleteInfo=[], jsonName='', JobName=None, debug=False):
+def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', JsonInfo={}, deleteInfo=[], jsonName='', JobName=None, user_config=None, debug=False):
     print(blue('  --> Submitting to htcondor '+str(len(job_args))+' jobs ...'))
-    CB = CondorBase(JobName= JobName if JobName else '_'.join(str(executable).split('.')[0:-1]), Time=Time)
+    CB = CondorBase(JobName= JobName if JobName else '_'.join(str(executable).split('.')[0:-1]), Time=Time, user_config=user_config)
     CB.CreateJobInfo(executable=executable)
     CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
     for name, info in JsonInfo.items():
@@ -114,6 +114,8 @@ class CondorBase():
         self.StoreJobInfo(extraName=extraName+'_'+str(ClusterId)+'_'+str(ProcId))
 
     def SubmitManyJobs(self, job_args = [], job_exes = [], jsonName=''):
+        import warnings
+        warnings.filterwarnings("ignore", category=FutureWarning, module="htcondor")
         ensureDirectory(self.JobInfo['outdir'])
         sub = htcondor.Submit(self.JobInfo)
         if len(job_exes) == 0:
@@ -133,6 +135,7 @@ class CondorBase():
             self.ModifyJobInfo('ClusterId',str(ClusterId))
             self.ModifyJobInfo('ExtraInfo', jobs)
             self.StoreJobInfo(extraName=jsonName)
+        warnings.resetwarnings()
         return ClusterId
 
     def CheckStatus(self):
