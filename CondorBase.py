@@ -5,9 +5,9 @@ from ClusterSpecificSettings import ClusterSpecificSettings
 from UserSpecificSettings import UserSpecificSettings
 
 
-def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', JsonInfo={}, deleteInfo=[], jsonName='', debug=False):
+def SubmitListToCondor(job_args, executable, outdir=None, Time='00:00:00', JsonInfo={}, deleteInfo=[], jsonName='', JobName=None, debug=False):
     print(blue('  --> Submitting to htcondor '+str(len(job_args))+' jobs ...'))
-    CB = CondorBase(JobName='_'.join(str(executable).split('.')[0:-1]), Time=Time)
+    CB = CondorBase(JobName= JobName if JobName else '_'.join(str(executable).split('.')[0:-1]), Time=Time)
     CB.CreateJobInfo(executable=executable)
     CB.ModifyJobInfo('outdir', outdir if outdir else os.getcwd()+'/jobout/')
     for name, info in JsonInfo.items():
@@ -47,9 +47,11 @@ def ResubmitFromJson(jsonName, to_remove=[], deleteInfo=[], debug=False):
 
 
 class CondorBase():
-    def __init__(self, JobName = 'test', Memory = 2, Disk = 1, Time = '00:00:00'):
+    def __init__(self, JobName = 'test', Memory = 2, Disk = 1, Time = '00:00:00', user_config=None):
         self.JobName = JobName
         self.user_settings = UserSpecificSettings(os.getenv('USER'))
+        if user_config is not None:
+            self.user_settings = self.user_settings.LoadJSON(user_config)
         self.email = self.user_settings.Get('email')
         self.RequestTimeSettingName, self.Time = ClusterSpecificSettings(self.user_settings.Get('cluster')).getTimeInfo(ref_time = Time)
         self.Memory = str(int(Memory)*1024)
@@ -68,24 +70,24 @@ class CondorBase():
         outputname = str(self.JobName)+'_$(ClusterId)_$(ProcId)'
         self.JobInfo = {
             'universe':                'vanilla',
-            'executable':              executable,                    # the program to run on the execute node
-            'arguments':               arguments,                     # sleep for 10 seconds
-            'JobBatchName':            str(self.JobName),             # name of the submitted job
-            'outdir':                  './joboutput/',                # directory to store log/out/err files from htcondor
-            'output':                  '$(outdir)'+outputname+'.out', # storage of stdout
-            'error':                   '$(outdir)'+outputname+'.err', # storage of stderr
-            'log':                     '$(outdir)'+outputname+'.log', # storage of job log info
-            'stream_output':           'True',                        # should transfer output file during the run.
-            'stream_error':            'True',                        # should transfer error file during the run.
-            'request_CPUs':            '1',                           # requested number of CPUs (cores)
-            'request_memory':          self.Memory,                   # memory in GB
-            'request_disk':            self.Disk,                     # disk space in GB
-            'notify_user':             self.email,                    # send an email to the user if the notification condition is set
-            'notification':            'Always',                      # Always/Error/Done
-            'getenv':                  'True',                        # port the local environment to the cluster
-            'when_to_transfer_output': 'ON_EXIT_OR_EVICT',            # specify when to transfer the outout back. Not tested yet
-            # 'Hold':                 'True',                        # Start the job with Hold status
-            # 'transfer_executable':  'False',                       # Default True: copy the executable to the cluster. Set to False search the executable on the remote machine
+            'executable':              executable,                     # the program to run on the execute node
+            'arguments':               arguments,                      # sleep for 10 seconds
+            'JobBatchName':            str(self.JobName),              # name of the submitted job
+            'outdir':                  './joboutput/',                 # directory to store log/out/err files from htcondor
+            'output':                  '$(outdir)/'+outputname+'.out', # storage of stdout
+            'error':                   '$(outdir)/'+outputname+'.err', # storage of stderr
+            'log':                     '$(outdir)/'+outputname+'.log', # storage of job log info
+            'stream_output':           'True',                         # should transfer output file during the run.
+            'stream_error':            'True',                         # should transfer error file during the run.
+            'request_CPUs':            '1',                            # requested number of CPUs (cores)
+            'request_memory':          self.Memory,                    # memory in GB
+            'request_disk':            self.Disk,                      # disk space in GB
+            'notify_user':             self.email,                     # send an email to the user if the notification condition is set
+            'notification':            'Always',                       # Always/Error/Done
+            'getenv':                  'True',                         # port the local environment to the cluster
+            'when_to_transfer_output': 'ON_EXIT_OR_EVICT',             # specify when to transfer the outout back. Not tested yet
+            # 'Hold':                 'True',                         # Start the job with Hold status
+            # 'transfer_executable':  'False',                        # Default True: copy the executable to the cluster. Set to False search the executable on the remote machine
             # 'requirements':          'OpSysAndVer == "CentOS7"'',   # additional requirements. Not tested yet
             # '+RequestRuntime':       str(int(nHours*60*60)),       # requested run time. Not tested yet
             }
@@ -139,7 +141,7 @@ class CondorBase():
 
     def StoreJobInfo(self, extraName=''):
         if extraName!='': extraName = '_'+extraName
-        with open(self.JobInfo['outdir']+'JobInfo'+extraName+'.json', 'w') as f:
+        with open(os.path.join(self.JobInfo['outdir'],'JobInfo'+extraName+'.json'), 'w') as f:
             json.dump(self.JobInfo, f, sort_keys=True, indent=4)
 
     def LoadJobInfo(self, filename):
