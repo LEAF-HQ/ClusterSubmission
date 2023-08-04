@@ -16,8 +16,9 @@ class UserSpecificSettings():
 
     def LoadJSON(self, name=''):
         json_name = name if name !='' else self.GetJSONPath(self.UserInfo['username'])
-        with open(json_name, 'r') as f:
-            self.UserInfo = yaml.safe_load(f)
+        if os.path.exists(json_name):
+            with open(json_name, 'r') as f:
+                self.UserInfo = yaml.safe_load(f)
 
     def SaveJSON(self):
         with open(self.GetJSONPath(self.UserInfo['username']), 'w') as f:
