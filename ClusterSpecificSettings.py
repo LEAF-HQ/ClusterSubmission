@@ -1,7 +1,7 @@
 from copy import deepcopy
-from printing_utils import red
 from functools import total_ordering
 from collections import OrderedDict
+from printing_utils import red  # type: ignore
 
 
 @total_ordering
