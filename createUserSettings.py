@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import argparse
-from UserSpecificSettings import *
+from UserSpecificSettings import *  # type: ignore
 
 
 def main():
