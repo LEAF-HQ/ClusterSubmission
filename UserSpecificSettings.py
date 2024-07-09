@@ -24,5 +24,5 @@ class UserSpecificSettings:
     def Set(self, name, info):
         self.UserInfo.update({name: info})
 
-    def Get(self, name):
-        return self.UserInfo[name]
+    def Get(self, name, default=None):
+        return self.UserInfo.get(name, default)
