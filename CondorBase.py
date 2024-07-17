@@ -91,7 +91,7 @@ class CondorBase:
             "notify_user": self.email,  # send an email to the user if the notification condition is set
             "notification": "Never",  # Always/Error/Done
             "getenv": "True",  # port the local environment to the cluster
-            "when_to_transfer_output": "ON_EXIT_OR_EVICT",  # specify when to transfer the outout back. Not tested yet
+            # "when_to_transfer_output": "ON_EXIT_OR_EVICT",  # specify when to transfer the outout back. Not tested yet
             # "Hold": "True",  # Start the job with Hold status
             # "transfer_executable": "False",  # Default True: copy the executable to the cluster. Set to False search the executable on the remote machine
             # "requirements": 'OpSysAndVer == "CentOS7"',  # additional requirements. Not tested yet
