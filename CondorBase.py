@@ -85,10 +85,11 @@ class CondorBase:
             "stream_output": "True",  # should transfer output file during the run.
             "stream_error": "True",  # should transfer error file during the run.
             "request_CPUs": "1",  # requested number of CPUs (cores)
+            "ShouldTransferFiles": "NO",
             "request_memory": self.Memory,  # memory in GB
             "request_disk": self.Disk,  # disk space in GB
             "notify_user": self.email,  # send an email to the user if the notification condition is set
-            "notification": "Always",  # Always/Error/Done
+            "notification": "Never",  # Always/Error/Done
             "getenv": "True",  # port the local environment to the cluster
             "when_to_transfer_output": "ON_EXIT_OR_EVICT",  # specify when to transfer the outout back. Not tested yet
             # "Hold": "True",  # Start the job with Hold status
