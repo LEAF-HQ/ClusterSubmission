@@ -17,8 +17,8 @@ class SiteSpecificSettings:
 
     def psi(self):
         self.cluster = "slurm_psi"
-        self.do_transfer = True
-        self.do_copy = True
+        self.do_transfer_input = True
+        self.do_copy_output = True
         self.tmp_output_folder = f"/scratch/{os.getenv('USER')}/pyRATOutputTemp"
         self.se_director = "root://t3dcachedb03.psi.ch/"
         self.use_se_director = True
@@ -27,19 +27,19 @@ class SiteSpecificSettings:
 
     def lxplus(self):
         self.cluster = "htcondor_lxplus"
-        self.do_transfer = False
-        self.do_copy = False
+        self.do_transfer_input = False
+        self.do_copy_output = False
         self.tmp_output_folder = None
         self.se_director = None
         self.use_se_director = False
-        self.copy_command = "cp"
+        self.copy_command = "xrdcp --force"
         self.remove_command = "rm"
 
     def iihe(self):
         self.cluster = "htcondor_ulb"
-        self.do_transfer = True
-        self.do_copy = True
-        self.tmp_output_folder = f"{os.getenv('PYRAT_PATH')}/pyRATOutputTemp"
+        self.do_transfer_input = True
+        self.do_copy_output = True
+        self.tmp_output_folder = "/tmp/"
         self.se_director = "davs://maite.iihe.ac.be:2880/"
         self.use_se_director = True
         self.copy_command = "LD_LIBRARY_PATH='' PYTHONPATH='' gfal-copy --force"
