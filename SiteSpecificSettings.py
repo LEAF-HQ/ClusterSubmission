@@ -33,8 +33,8 @@ class SiteSpecificSettings:
 
     def iihe(self):
         self.cluster = "htcondor_ulb"
-        self.tmp_output_folder = f"{os.getenv('PYRAT_OUTPUTPATH')}/pyRATOutputTemp"
-        self.se_director = "root://maite.iihe.ac.be:1094/"
+        self.tmp_output_folder = f"{os.getenv('PYRAT_PATH')}/pyRATOutputTemp"
+        self.se_director = "davs://maite.iihe.ac.be:2880/"
         self.use_se_director = True
         self.copy_command = "LD_LIBRARY_PATH='' PYTHONPATH='' gfal-copy --force"
         self.remove_command = "LD_LIBRARY_PATH='' PYTHONPATH='' gfal-rm"
