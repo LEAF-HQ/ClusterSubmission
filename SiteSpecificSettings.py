@@ -39,7 +39,7 @@ class SiteSpecificSettings:
         self.cluster = "htcondor_ulb"
         self.do_transfer_input = True
         self.do_copy_output = True
-        self.tmp_output_folder = "/tmp/"
+        self.tmp_output_folder = f"/tmp/{os.getenv('USER')}/"
         self.se_director = "davs://maite.iihe.ac.be:2880/"
         self.use_se_director = True
         self.copy_command = "LD_LIBRARY_PATH='' PYTHONPATH='' gfal-copy --force"
